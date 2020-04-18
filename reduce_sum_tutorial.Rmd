@@ -113,6 +113,8 @@ model {
 
 ## Building and Running the Basic Model
 
+To install `cmdstanr`, follow the directions here: https://mc-stan.org/cmdstanr/
+
 To build the model in `cmdstanr` run:
 
 ```{r}
