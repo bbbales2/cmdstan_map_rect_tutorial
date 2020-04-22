@@ -125,16 +125,16 @@ To sample from the model run:
   
 ```{r}
 time0 = system.time(fit0 <- logistic0$sample(redcard_data,
-                                             num_cores = 1,
+                                             num_cores = 4,
                                              num_chains = 4,
                                              refresh = 1000))
 
 time0
 ```
 
-In this case, we just look at the performance of four chains running in sequence
-on one core so we can compare that directly to four chains chain running with
-threads. The `elapsed` time is the time that we would have recorded if we were
+In this case, we'll compute four chains using four cores. This computer has eight
+cores though, and we'll see how we can make use of those other cores later.
+The `elapsed` time is the time that we would have recorded if we were
 timing this process with a stop-watch, so that is the one relevant to understanding
 performance here (`system` time is time spent on system functions like I/O,
                   and `user` time is for parallel calculations).
@@ -271,12 +271,11 @@ set_num_threads(2)
 ```
 
 As this computer has 8 cores and we intend to run the usual 4 chains,
-it is recommended to use 2 threads per chain and sample the chains in
-parallel. This is commonly best whenever all chains will sample about
-the same amount of time, which is most often the case. The
-within-chain parallelism is generally less effiecient as compared to
-running chains in parallel. So if greater speedups are desired, then
-the user can choose to run fewer chains (i.e. 2 chains with 4 threads
+we will use 2 threads per chain to make full use of the processor
+(4 chains with 2 threads each can make use of the full eight cores).
+The within-chain parallelism is generally less effiecient as compared to
+running chains in parallel, but if greater single-chain speedups are desired,
+then the user can choose to run fewer chains (i.e. 2 chains with 4 threads
 each) or use more machines.
 
 Run and time the model with:
@@ -299,11 +298,13 @@ time0[["elapsed"]] / time1[["elapsed"]]
 ```
 
 This model was particularly easy to parallelize because
-a lot of the arguments are data (and do not need to be autodiffed). If a
-model has a large number of arguments that are either defined in the
-parameters block, transformed parameters block, or model block, or do not
-do very much computation inside the reduce function, the speedup will be
-much more limited.
+a lot of the arguments are data (and do not need to be autodiffed). It is
+possible to get a speedup over two even though we are only doubling the
+computational resources because of the way `reduce_sum` breaks up work and
+uses CPU cache more efficiently. If a model has a large number of arguments
+that are either defined in the parameters block, transformed parameters block,
+or model block, or do not do very much computation inside the reduce function,
+or does not get lucky with caching, the speedup will be much more limited.
 
 We can always get speedup in terms of effective sample size per time
 by running multiple chains on different cores. `reduce_sum` is not a
